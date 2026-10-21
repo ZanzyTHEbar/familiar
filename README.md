@@ -1,6 +1,7 @@
 # Familiar
 
-F3: a minimal, read-only Linux doctor, not an agent runtime.
+F3: a minimal, read-only Linux doctor. F4: synthetic evaluation fixtures and an
+offline retrieval baseline. Neither is an agent runtime.
 
 Local module identity: **`familiar.local/familiar`**; executable: **`familiar`**.
 This reversible local-only name is **not a public hosting identity**.
@@ -57,6 +58,9 @@ Search is pinned to committed revision
 (`v0.0.0-20261011132509-fe092dd03d39`). Its unpublished dirty F2 work is not
 included. **R2 must wait for coordinator-approved F2 integration.**
 No source or docs in search are changed by Familiar. Independent review and
-parent-boundary gate re-verification are required before integration. Next
-planned slice is F4, then separately gated R1; this repository is not a second
+parent-boundary gate re-verification are required before integration.
+F4's corpus, judgments and measurement utility are described in
+[fixtures/README.md](fixtures/README.md), with predeclared criteria and exact
+commands in [F4_GATES.md](F4_GATES.md). Actual end-to-end task success waits for
+R6; separately gated R1 remains unqualified. This repository is not a second
 F/R/W/P backlog.
