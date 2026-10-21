@@ -54,6 +54,14 @@ CHECKs executed by that script:
 
 ## Results
 
-Pending. Successful linkage is not native ABI, cancellation, hardware/model fit,
+Passed on 2026-10-21 with the documented clean-export override. Vector builds,
+vet, formatting and diff checks exited 0. The CLI acceptance scenario exited 1
+with the expected explicit model blockers and identical before/after manifests.
+The missing-native launch exited 127 with a real missing-`libfffbridge.so` loader
+error. See [F3_EVIDENCE.md](F3_EVIDENCE.md) for paths, fingerprints, independent
+review and the initial failed dependency-resolution attempt.
+
+Successful linkage is not native ABI, cancellation, hardware/model fit,
 filesystem recovery, R1 readiness, or F-integration qualification. R2 still needs
-coordinator-approved F2 integration.
+coordinator-approved F2 integration. Re-run gates at the integration boundary;
+the canonical plan has not been marked complete or transferred.
