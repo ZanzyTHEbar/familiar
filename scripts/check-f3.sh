@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 : "${SCRATCH:?create a new empty owner-controlled scratch directory first}"
-: "${SOURCE:?set the canonical search repository path}"
 : "${NATIVE:?set the installed native prefix}"
 test -z "$(ls -A "$SCRATCH")"
 umask 077
-ROOT=$PWD
-PIN=fe092dd03d398570b5d93cf0c030f573bc90257b
-mkdir -p "$SCRATCH"/{search,bin,cache,tmp,workspace,state,system-libs}
-git -C "$SOURCE" archive "$PIN" | tar -x -C "$SCRATCH/search"
+mkdir -p "$SCRATCH"/{bin,cache,tmp,workspace,state,system-libs}
+# Published vvfs 88108866 is materialized through normal Go module retrieval.
+# No workspace replacement or dirty/local source fallback.
 export GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local GOMAXPROCS=2 GOMEMLIMIT=256MiB
 export CGO_ENABLED=1 GOCACHE="$SCRATCH/cache" TMPDIR="$SCRATCH/tmp"
 export OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 RAYON_NUM_THREADS=2
@@ -16,14 +14,12 @@ export PKG_CONFIG_PATH="$NATIVE/lib/pkgconfig"
 export CGO_CFLAGS="-I$NATIVE/include"
 export CGO_LDFLAGS="-L$NATIVE/lib -Wl,-rpath,$NATIVE/lib"
 export LD_LIBRARY_PATH="$NATIVE/lib"
-export GOWORK="$SCRATCH/go.work"
-go work init "$ROOT"
-go work edit -replace="github.com/ZanzyTHEbar/virtual-vectorfs@v0.0.0-20261011132509-fe092dd03d39=$SCRATCH/search"
+export GOWORK=off
 pkg-config --modversion fffbridge
-timeout 180s go build -mod=readonly -p=2 -tags=vectors -o "$SCRATCH/bin/familiar" ./cmd/familiar
-timeout 60s go build -mod=readonly -p=2 -tags=vectors ./...
-timeout 60s go vet -mod=readonly -p=2 -tags=vectors ./...
-test -z "$(gofmt -l cmd doctor)"
+timeout 180s go build -mod=readonly -p=1 -tags=vectors -o "$SCRATCH/bin/familiar" ./cmd/familiar
+timeout 60s go build -mod=readonly -p=1 -tags=vectors ./...
+timeout 60s go vet -mod=readonly -p=1 -tags=vectors ./...
+test -z "$(gofmt -l cmd doctor retrieval)"
 git diff --check
 python3 - "$SCRATCH" <<'PY'
 import hashlib, json, os, pathlib, subprocess, sys

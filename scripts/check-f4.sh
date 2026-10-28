@@ -9,11 +9,10 @@ export CGO_ENABLED=1 GOCACHE="$SCRATCH/cache" TMPDIR="$SCRATCH/tmp"
 export OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 RAYON_NUM_THREADS=2
 export PKG_CONFIG_PATH="$NATIVE/lib/pkgconfig" CGO_CFLAGS="-I$NATIVE/include"
 export CGO_LDFLAGS="-L$NATIVE/lib -Wl,-rpath,$NATIVE/lib" LD_LIBRARY_PATH="$NATIVE/lib"
-export GOWORK="$SCRATCH/go.work"
-test -f "$GOWORK"
-timeout 60s go build -mod=readonly -p=2 -tags=vectors -o "$SCRATCH/bin/familiar-baseline" ./cmd/familiar-baseline
-timeout 60s go vet -mod=readonly -p=2 -tags=vectors ./...
-test -z "$(gofmt -l cmd doctor)"
+export GOWORK=off
+timeout 60s go build -mod=readonly -p=1 -tags=vectors -o "$SCRATCH/bin/familiar-baseline" ./cmd/familiar-baseline
+timeout 60s go vet -mod=readonly -p=1 -tags=vectors ./...
+test -z "$(gofmt -l cmd doctor retrieval)"
 git diff --check
 mkdir -m 700 "$SCRATCH/f4"
 {
