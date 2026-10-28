@@ -5,7 +5,9 @@ offline retrieval baseline. Neither is an agent runtime.
 
 Local module identity: **`familiar.local/familiar`**; executable: **`familiar`**.
 This reversible local-only name is **not a public hosting identity**.
-Canonical repository: `../../familiar` from this Workmux worker; target `main`.
+The module name is intentionally local; publishing source is not yet a `go install`
+contract. See [PRODUCT_CHECKPOINT.md](PRODUCT_CHECKPOINT.md) for current status,
+unqualified/disabled features and public-release blockers, including source licensing.
 
 ```sh
 # Requires the pinned search dependency and installed compatible FFF/FAISS.
@@ -50,8 +52,8 @@ mutation capability.
 
 ## Authority and dependency boundary
 
-The authoritative [delivery plan](../../../go-pkgs/virtual-vectorfs/docs/LOCAL_AGENT_PLAN.md)
-and [policy](../../../go-pkgs/virtual-vectorfs/docs/LOCAL_AGENT_POLICY.md) remain
+The authoritative [delivery plan](https://github.com/ZanzyTHEbar/virtual-vectorfs/blob/main/docs/LOCAL_AGENT_PLAN.md)
+and [policy](https://github.com/ZanzyTHEbar/virtual-vectorfs/blob/main/docs/LOCAL_AGENT_POLICY.md) remain
 in the separate search repository. No formal plan transfer occurred.
 Search is pinned to committed revision
 `fe092dd03d398570b5d93cf0c030f573bc90257b`
@@ -64,3 +66,17 @@ F4's corpus, judgments and measurement utility are described in
 commands in [F4_GATES.md](F4_GATES.md). Actual end-to-end task success waits for
 R6; separately gated R1 remains unqualified. This repository is not a second
 F/R/W/P backlog.
+
+An opt-in, generation-first R1 source boundary now lives in
+[inference/](inference/README.md), with reviewed LFM3 generation, Liquid-first
+embedding/retrieval candidates and explicit Gemma fallback, an owned lazy lifecycle
+and bounded local HTTP parsing. It is not wired
+into the CLI or doctor and is **not model-qualified or production-enabled**.
+See [R1_GATES.md](R1_GATES.md) for validation history and remaining real-model gates.
+
+## License
+
+Familiar source is licensed under the [Apache License 2.0](LICENSE), as selected
+by the project owner. Dependencies, native libraries and model artifacts retain
+their own licenses. This does not relicense them or accept model terms; no model
+weights, runtime binaries or third-party source are bundled here.

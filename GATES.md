@@ -2,7 +2,7 @@
 
 Owner: `f3-doctor`; target: `main`. Integration requires independent review.
 The authoritative F/R/W/P plan remains
-[`LOCAL_AGENT_PLAN.md`](../../../go-pkgs/virtual-vectorfs/docs/LOCAL_AGENT_PLAN.md);
+[`LOCAL_AGENT_PLAN.md`](https://github.com/ZanzyTHEbar/virtual-vectorfs/blob/main/docs/LOCAL_AGENT_PLAN.md);
 this is an execution record, not a transferred plan or a second backlog.
 
 ## Exact CHECK / EXPECT
@@ -16,9 +16,9 @@ empty state directory selected by `XDG_STATE_HOME`; all outputs stay outside bot
 
 ```sh
 umask 077
-export SCRATCH=$(mktemp -d /mnt/common/familiar-f3.XXXXXX)
-export SOURCE=$(realpath ../../../go-pkgs/virtual-vectorfs)
-export NATIVE="$SOURCE/build/native"
+export SCRATCH=$(mktemp -d "${SCRATCH_PARENT:?select private scratch parent}/familiar-f3.XXXXXX")
+: "${SOURCE:?set approved clean search checkout}"
+: "${NATIVE:?set installed compatible native prefix}"
 timeout 300s bash scripts/check-f3.sh
 ```
 
@@ -32,12 +32,12 @@ CHECKs executed by that script:
    `v0.0.0-20261011132509-fe092dd03d39`. Its full archive is not cached here;
    this explicitly approved temporary GOWORK override enables offline validation.
 2. With explicit native prefix, CGO include/link/rpath and loader path,
-   `timeout 180s go build -mod=readonly -p=2 -tags=vectors -o "$SCRATCH/bin/familiar" ./cmd/familiar`
-   and `timeout 60s go build -mod=readonly -p=2 -tags=vectors ./...`.
+    `timeout 180s go build -mod=readonly -p=1 -tags=vectors -o "$SCRATCH/bin/familiar" ./cmd/familiar`
+    and `timeout 60s go build -mod=readonly -p=1 -tags=vectors ./...`.
    EXPECT: both exit 0. All Go commands use `GOPROXY=off GOSUMDB=off
    GOTOOLCHAIN=local GOMAXPROCS=2 GOMEMLIMIT=256MiB`, isolated `GOCACHE` and
    `TMPDIR`; native thread counts are bounded to two.
-3. `timeout 60s go vet -mod=readonly -p=2 -tags=vectors ./...`;
+3. `timeout 60s go vet -mod=readonly -p=1 -tags=vectors ./...`;
    `test -z "$(gofmt -l cmd doctor)"`; `git diff --check`.
    EXPECT: exit 0, no findings. No search suite, Rust build, or benchmarks.
 4. One real CLI acceptance scenario: snapshot empty workspace/state, execute
