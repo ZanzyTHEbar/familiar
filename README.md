@@ -29,3 +29,10 @@ directories, state, indexes, or watchers. Empty scratch roots are acceptance
 fixtures, not adopted workspace identities or approved read/write grants.
 There is no agent loop, embedding ingestion, SQLite/replay, Goja, broker, or
 mutation capability.
+
+## License
+
+Familiar source is licensed under the [Apache License 2.0](LICENSE), as selected
+by the project owner. Dependencies, native libraries and model artifacts retain
+their own licenses. This does not relicense them or accept model terms; no model
+weights, runtime binaries or third-party source are bundled here.
