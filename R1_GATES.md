@@ -209,3 +209,14 @@ its guarded functional acceptance intentionally fails. Its separate prototype
 branch may use published vvfs 88108866 for API compilation only; Ambient remains
 canonical and no FFF privacy/adoption authorization exists. Preserve the original
 functional assertions and record their real failure, not a skip or fake pass.
+
+## Final merged source result — 2026-10-28
+
+Main includes R1, consolidated design and original independent F3 review history;
+R2 remains a separate experimental branch with genuine failed functional acceptance.
+Full existing vector build/vet/test commands and F3/F4 executable gates passed
+serially with CPU 2, Go jobs 1, isolated scratch and installed native libraries.
+Main has no Go test files; behavioral evidence comes from real CLI/fixture gates,
+not invented unit coverage. No runtime/model/launcher qualification occurred.
+Apache-2.0 applies to Familiar source only; no model/dependency terms accepted.
+See PRODUCT_CHECKPOINT.md for the current product boundary and next milestone.

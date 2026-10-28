@@ -51,18 +51,25 @@ There is no automatic update/fallback.
   its authenticated normal module pseudo-version `v0.0.0-20261028155634-88108866c3ca`.
   Canonical production remains Ambient: FFF adoption and privacy qualification
   are still pending. No dirty/unpublished dependency or native rebuild/adoption.
-- Publication requires reachable-history private-content review and actual merged
-  build/acceptance. Historical nonsecret host paths are accepted publication
-  metadata; normal history is preserved, never silently rewritten.
+- Reachable publication history was inventoried and reviewed for credentials,
+  private transcripts/logs and irrelevant files; none found. Historical nonsecret
+  host paths are accepted publication metadata; normal history is preserved.
 
 ## Final integration checks
 
-Final merged main validation is pending at this saved checkpoint: full Go build,
-vet and existing tests with vectors, plus F3 doctor and F4 fixture/baseline gates,
-serial CPU 2 / Go jobs 1 with isolated scratch and approved installed native
-libraries. Results will be recorded before push. No model provisioning, runtime
-launch, endpoint probing, native build or LAN is part of these checks. R2's known
-failed functional journey is not part of main and is not hidden by a skip.
+Final merged main source passed full `go build`, `go vet` and `go test ./...`
+with `-mod=readonly -p=1 -tags=vectors` (test run `-count=1 -timeout 90s`),
+plus `scripts/check-f3.sh` and `scripts/check-f4.sh`, serial CPU 2 / Go jobs 1,
+offline with isolated scratch and approved installed native libraries. The main
+packages have no Go test files; the test command succeeds but is not behavioral
+coverage. The existing executable gates exercised real doctor/no-filesystem-effect
+and missing-native rejection, and two real native fixture retrieval runs with
+reproducible judgments and unchanged synthetic inputs. Formatting/diff checks
+are clean. This is source/CLI/fixture acceptance, **not real model qualification**.
+No model provisioning, runtime launch, endpoint probing, native build or LAN was
+performed. R2's known failed functional journey is not part of main and is not
+hidden by a skip. Source dependency remains the prior fe092dd pin; validation
+uses the gate's approved clean committed-source export, not a dirty checkout.
 
 ## Single best next product milestone
 
