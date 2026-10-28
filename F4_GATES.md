@@ -10,9 +10,9 @@ From this worktree, with installed native libraries and cached Go dependencies:
 
 ```sh
 umask 077
-export SCRATCH=$(mktemp -d /mnt/common/familiar-f4.XXXXXX)
-export SOURCE=/mnt/common/projects/go-pkgs/virtual-vectorfs
-export NATIVE="$SOURCE/build/native"
+export SCRATCH=$(mktemp -d "${SCRATCH_PARENT:?select private scratch parent}/familiar-f4.XXXXXX")
+: "${SOURCE:?set approved clean search checkout}"
+: "${NATIVE:?set installed compatible native prefix}"
 timeout 300s bash scripts/check-f3.sh
 timeout 180s bash scripts/check-f4.sh
 ```
@@ -65,7 +65,7 @@ separately authorized R1. R2 still requires approved F2 integration.
 
 ## Results
 
-Passed locally on 2026-10-21 in `/mnt/common/familiar-f4.lJWdR6`: F3 build/vet/
+Passed locally on 2026-10-21 in retained private scratch: F3 build/vet/
 doctor/loader checks and both fresh F4 retrieval runs, all three loader rejection
 checks, and identical input manifests. Mean recall@5 was 1.0 in both runs;
 overall warm p95 0.819/1.072 ms; sampled peak RSS 38,296/37,916 KiB. See

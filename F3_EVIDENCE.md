@@ -1,9 +1,13 @@
 # F3 execution evidence — 2026-10-21
 
+Public copy: original host locations are represented by logical private-archive
+labels/environment variables below. Original measured results, pins and artifact
+hashes are unchanged; exact local path mappings/raw logs are not distributed.
+
 ## Ownership and source
 
-- Canonical Familiar repository: `/mnt/common/projects/tools/familiar`.
-- Worktree: `/mnt/common/projects/tools/familiar__worktrees/f3-doctor`.
+- Canonical Familiar repository: local `main` checkout.
+- Worktree: `f3-doctor`.
 - Worker branch: `f3-doctor`; integration target: `main`.
 - Starting Familiar commit: `317f050` (repository initialization).
 - Gates commit: `7e3ab8c` (`docs(f3): define offline doctor gates`). Gates were
@@ -27,7 +31,7 @@ publication. Archive SHA-256:
 ```
 
 `go.mod` indirect requirements and `go.sum` were generated using offline
-`go mod tidy -modfile=/mnt/common/familiar-f3.BFvuLs/familiar.mod` with
+`go mod tidy -modfile="$TIDY_SCRATCH/familiar.mod"` with
 `GOWORK=off` and a temporary version-specific replacement to that same export.
 Only dependency requirements/checksums were retained, not the replacement.
 No search archive checksum is fabricated in `go.sum`: its provenance for these
@@ -36,7 +40,7 @@ gates is the explicit committed export, not a downloaded module zip.
 ## Environment and native boundary
 
 Linux amd64; `go version go1.26.8 linux/amd64`. Installed native prefix:
-`/mnt/common/projects/go-pkgs/virtual-vectorfs/build/native`.
+the explicitly selected `$NATIVE` location in the private command record.
 The script explicitly sets `PKG_CONFIG_PATH`, `CGO_CFLAGS`, `CGO_LDFLAGS`
 (including rpath), and `LD_LIBRARY_PATH` to that prefix. `pkg-config
 --modversion fffbridge` returned **0.1.0**, not a FFF engine-version claim.
@@ -54,8 +58,8 @@ All Go validation uses `GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local
 GOMAXPROCS=2 GOMEMLIMIT=256MiB`, `-p=2` for builds/vet, explicit timeouts,
 scratch build cache/temp outputs, and two-thread native environment limits.
 The Go memory limit is not a hard process-tree/native memory ceiling.
-`findmnt -T /mnt/common` again reported `virtiofs` / `vm403-common`;
-`stat -f -c %T /mnt/common` returned `fuseblk`. These are tool-specific
+`findmnt -T "$SCRATCH_PARENT"` reported `virtiofs`;
+`stat -f -c %T "$SCRATCH_PARENT"` returned `fuseblk`. These are tool-specific
 observations, not evidence of a mount change or broker qualification.
 
 ## Actual CHECK / EXPECT results
@@ -64,9 +68,9 @@ Exact runnable definitions: [GATES.md](GATES.md), `scripts/check-f3.sh`.
 Final full run after module metadata completion:
 
 ```sh
-SCRATCH=/mnt/common/familiar-f3.DuZEnM \
-SOURCE=/mnt/common/projects/go-pkgs/virtual-vectorfs \
-NATIVE=/mnt/common/projects/go-pkgs/virtual-vectorfs/build/native \
+: "${SCRATCH:?original fresh private F3 scratch}"
+: "${SOURCE:?approved clean search checkout}"
+: "${NATIVE:?installed compatible native prefix}"
 timeout 300s bash scripts/check-f3.sh
 ```
 
@@ -81,25 +85,25 @@ timeout 300s bash scripts/check-f3.sh
 | Before/after paths, types, modes, sizes, mtimes, file hashes | Identical; both roots remain empty, HOME absent |
 | Isolated loader launch with cache/RPATH disabled, no native loader path | Exit 127 before main; `error while loading shared libraries: libfffbridge.so: cannot open shared object file: No such file or directory` |
 
-Raw final evidence remains in `/mnt/common/familiar-f3.DuZEnM`:
+Raw final evidence remains in the private F3 final archive:
 `doctor.json`, `doctor.stderr` (empty), `before.json`, `after.json`,
 `loader.stdout` (empty), `loader.stderr`, clean source export, `go.work`, binary
 and isolated build cache. Before/after manifest SHA-256 is identical:
 `6c6d54f12988b023221dd269862cf61de024c5d34066ad334ecf6fec500a5e75`.
 Doctor JSON SHA-256:
 `f8970facd5517591667cb1131884b142723e7c57dd45d39671aaf88e8afdc687`.
-These host-specific paths are execution evidence, not dependency configuration.
+The private path mappings are execution evidence, not dependency configuration.
 
-Initial attempt `/mnt/common/familiar-f3.95QqKA` stopped at the first build:
+The initial private-scratch attempt stopped at the first build:
 `module lookup disabled by GOPROXY=off`. Merely adding both modules to `use`
 did not resolve the pinned requirement's graph offline. The documented fix was
 an explicit **version-specific scratch workspace replacement**, not a stub,
 network fetch, or dirty-tree replacement. The revised full gate then passed in
-`/mnt/common/familiar-f3.BFvuLs` and was repeated in the final scratch above.
+the private tidy/retry scratch and was repeated in the final scratch above.
 
 Before/after SHA-256 comparison verified all **12** pre-existing dirty/untracked
 canonical search files and the dirty companion handoff document byte-identical.
-The initial manifest is `/mnt/common/familiar-f3.95QqKA.source-before.json`.
+The initial `source-before.json` manifest is retained in that private archive.
 No canonical code/docs, app data, or personal directories were modified.
 
 ## Independent review and limits

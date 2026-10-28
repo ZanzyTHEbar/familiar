@@ -1,8 +1,12 @@
 # F4 execution evidence — 2026-10-21
 
+Public copy: original host locations use logical private-archive labels or
+environment variables. Measurements, failures, pins and original artifact hashes
+are unchanged; raw logs and exact local path mappings are not distributed.
+
 ## Ownership and boundary
 
-Worker/worktree: `f4`, `/mnt/common/projects/tools/familiar__worktrees/f4`.
+Worker/worktree: `f4`.
 Target: local Familiar `main`, starting at independently reviewed F3
 `9f80f78c0cda3c4324da241da2d5ae58ae0e722f`.
 The canonical F/R/W/P plan and F1 policy were read in the search repository;
@@ -21,9 +25,9 @@ real scratch acceptance scenario, repeated for measurement reproducibility.
 
 ```sh
 umask 077
-export SCRATCH=/mnt/common/familiar-f4.lJWdR6 # newly allocated empty directory
-export SOURCE=/mnt/common/projects/go-pkgs/virtual-vectorfs
-export NATIVE="$SOURCE/build/native"
+: "${SCRATCH:?original newly allocated empty private directory}"
+: "${SOURCE:?approved clean search checkout}"
+: "${NATIVE:?installed compatible native prefix}"
 timeout 300s bash scripts/check-f3.sh
 timeout 180s bash scripts/check-f4.sh
 ```
@@ -109,10 +113,10 @@ pre-existing dirty/untracked canonical search files and the dirty companion
 handoff byte-identical. Those 13-file records are
 `$SCRATCH.source-before.json` and `$SCRATCH.source-after.json` (beside scratch).
 
-An initial invocation allocated `/mnt/common/familiar-f4.8OmNzj` but redirected
+An initial invocation allocated private scratch but redirected
 its log inside the required-empty scratch before invoking F3: the empty-scratch
 guard correctly stopped it, exit 1, before any build. No gate was weakened.
-A fresh run `/mnt/common/familiar-f4.Xqom2C` passed; the final full rerun above
+A fresh private-scratch run passed; the final full rerun above
 adds saved manifests/provenance. All scratch/worktrees remain intact.
 
 ## Remaining gates / handoff
