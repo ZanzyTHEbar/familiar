@@ -31,7 +31,10 @@ Familiar is a separate Go 1.25 module. R1 has a compiled, unqualified generation
 prototype on its task branch, not a configured CLI runtime or agent loop.
 Preserve `doctor.Inspect() doctor.Report`, schema version 1, and its filesystem/network-free default: generation and embedding remain `not-configured`.
 Add any future qualification as an explicit opt-in command, not startup checks or implicit doctor probes.
-The committed search dependency is `fe092dd03d398570b5d93cf0c030f573bc90257b`.
+Main's search dependency is `fe092dd03d398570b5d93cf0c030f573bc90257b`.
+Published upstream `88108866c3cac44d7a66e1a9532d35b1f2271ecf` is pinned only
+on the separate R2 experimental branch for API compilation. Its build/vet pass
+does not authorize FFF adoption/privacy; canonical production remains Ambient.
 The historical R2 prototype proposed unpublished `1e2e882fe8808c4601ecd61ebd9e98e39404844e`;
 that is not the accepted module pin. Public R2 `Open` is now safety-disabled before
 argument/filesystem/native access. Its retained prototype stays unmerged pending

@@ -7,7 +7,7 @@ Local module identity: **`familiar.local/familiar`**; executable: **`familiar`**
 This reversible local-only name is **not a public hosting identity**.
 The module name is intentionally local; publishing source is not yet a `go install`
 contract. See [PRODUCT_CHECKPOINT.md](PRODUCT_CHECKPOINT.md) for current status,
-unqualified/disabled features and public-release blockers, including source licensing.
+unqualified/disabled features and release/qualification status.
 
 ```sh
 # Requires the pinned search dependency and installed compatible FFF/FAISS.
