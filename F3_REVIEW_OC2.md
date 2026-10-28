@@ -1,5 +1,10 @@
 # F3 independent review — oc2
 
+Public-copy preparation note: host-specific archive locations below are logical
+labels/environment variables, not the original absolute paths. The original
+review verdict, measured results and artifact hashes are preserved. Exact local
+path mappings/raw traces are retained privately and are not distributed.
+
 **Verdict: PASS for the authorized F3 slice; no blocking findings. No integration performed.**
 
 - Reviewer: Workmux `oc2`, interactive independent reviewer, branch `review-f3`.
@@ -37,18 +42,18 @@ not evidence of standalone offline module-cache availability on another host.
 
 ## Independently rerun parent-boundary gates
 
-Run from `/mnt/common/projects/tools/familiar__worktrees/review-f3`:
+Run from the `review-f3` worktree:
 
 ```sh
 umask 077
-SCRATCH=$(mktemp -d /mnt/common/familiar-review-oc2/gates.XXXXXX)
-SOURCE=$(realpath ../../../go-pkgs/virtual-vectorfs)
-NATIVE="$SOURCE/build/native"
+SCRATCH=$(mktemp -d "${SCRATCH_PARENT:?private scratch parent}/gates.XXXXXX")
+: "${SOURCE:?approved clean search checkout}"
+: "${NATIVE:?installed compatible native prefix}"
 export SCRATCH SOURCE NATIVE
-timeout 300s bash -x scripts/check-f3.sh > /mnt/common/familiar-review-oc2/gates.log 2>&1
+timeout 300s bash -x scripts/check-f3.sh > "$REVIEW_ARCHIVE/gates.log" 2>&1
 ```
 
-Actual scratch: `/mnt/common/familiar-review-oc2/gates.35fegB`.
+Actual scratch: retained in the private F3 review archive.
 Outer gate exit: **0**. Full expanded commands/output: `gates.log` above;
 the immutable implementation's `scripts/check-f3.sh` defines all assertions.
 Every Go build/vet used `GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local
@@ -74,7 +79,7 @@ installs, native builds, `make`, user database access or personal scans occurred
 Additional real CLI audit: bounded `strace -f -qq` with
 `-e trace=%file,%network,write,writev,pwrite64,ftruncate,fsync,fdatasync,getdents64,inotify_init,inotify_init1,inotify_add_watch,fanotify_init`.
 Exact argv, nine-variable isolated environment, working directory and exit code
-are in `/mnt/common/familiar-review-oc2/strace-command.json`; trace is
+are in the private review archive's `strace-command.json`; trace is
 `doctor.strace` there. Observed only native/system/runtime/executable reads and
 one JSON write to stdout: no writable file opens, file mutations, directory
 enumeration, sockets, or filesystem watches. Exit 1 and JSON match the gate run.
@@ -83,7 +88,7 @@ This is observed behavior, not an OS sandbox or general native qualification.
 ## Durable evidence and preservation
 
 Raw logs/manifests/trace/build metadata remain in
-`/mnt/common/familiar-review-oc2`; `SHA256SUMS` fingerprints them.
+the private F3 review archive; `SHA256SUMS` fingerprints them.
 Key SHA-256 values:
 
 ```text
