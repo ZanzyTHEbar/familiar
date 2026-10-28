@@ -2,7 +2,7 @@
 
 Owner: `f3-doctor`; target: `main`. Integration requires independent review.
 The authoritative F/R/W/P plan remains
-[`LOCAL_AGENT_PLAN.md`](../../../go-pkgs/virtual-vectorfs/docs/LOCAL_AGENT_PLAN.md);
+[`LOCAL_AGENT_PLAN.md`](https://github.com/ZanzyTHEbar/virtual-vectorfs/blob/main/docs/LOCAL_AGENT_PLAN.md);
 this is an execution record, not a transferred plan or a second backlog.
 
 ## Exact CHECK / EXPECT
@@ -16,29 +16,26 @@ empty state directory selected by `XDG_STATE_HOME`; all outputs stay outside bot
 
 ```sh
 umask 077
-export SCRATCH=$(mktemp -d /mnt/common/familiar-f3.XXXXXX)
-export SOURCE=$(realpath ../../../go-pkgs/virtual-vectorfs)
-export NATIVE="$SOURCE/build/native"
+export SCRATCH=$(mktemp -d "${SCRATCH_PARENT:?select private scratch parent}/familiar-f3.XXXXXX")
+: "${NATIVE:?set installed compatible native prefix}"
 timeout 300s bash scripts/check-f3.sh
 ```
 
 CHECKs executed by that script:
 
-1. Export **only** commit `fe092dd03d398570b5d93cf0c030f573bc90257b`
-   with `git archive` into `$SCRATCH/search`. Use a scratch `go.work` containing
-   this module and an explicit version-specific replace to that clean export.
-   EXPECT: exact source pin; no dirty F2
-   transfer, no committed replace/vendor/host path. The required pseudo-version is
-   `v0.0.0-20261011132509-fe092dd03d39`. Its full archive is not cached here;
-   this explicitly approved temporary GOWORK override enables offline validation.
+1. Materialize published `v0.0.0-20261028155634-88108866c3ca` through normal
+   authenticated Go module retrieval before the offline gate. EXPECT: exact
+   Origin `88108866c3cac44d7a66e1a9532d35b1f2271ecf`, no workspace override,
+   local replacement or dirty source transfer. `GOWORK=off`; this experimental
+   branch's API pin is not FFF/native adoption or privacy acceptance.
 2. With explicit native prefix, CGO include/link/rpath and loader path,
-   `timeout 180s go build -mod=readonly -p=2 -tags=vectors -o "$SCRATCH/bin/familiar" ./cmd/familiar`
-   and `timeout 60s go build -mod=readonly -p=2 -tags=vectors ./...`.
+   `timeout 180s go build -mod=readonly -p=1 -tags=vectors -o "$SCRATCH/bin/familiar" ./cmd/familiar`
+   and `timeout 60s go build -mod=readonly -p=1 -tags=vectors ./...`.
    EXPECT: both exit 0. All Go commands use `GOPROXY=off GOSUMDB=off
    GOTOOLCHAIN=local GOMAXPROCS=2 GOMEMLIMIT=256MiB`, isolated `GOCACHE` and
    `TMPDIR`; native thread counts are bounded to two.
-3. `timeout 60s go vet -mod=readonly -p=2 -tags=vectors ./...`;
-   `test -z "$(gofmt -l cmd doctor)"`; `git diff --check`.
+3. `timeout 60s go vet -mod=readonly -p=1 -tags=vectors ./...`;
+   `test -z "$(gofmt -l cmd doctor retrieval)"`; `git diff --check`.
    EXPECT: exit 0, no findings. No search suite, Rust build, or benchmarks.
 4. One real CLI acceptance scenario: snapshot empty workspace/state, execute
    `timeout 10s "$SCRATCH/bin/familiar" doctor --json --offline` from workspace
@@ -62,6 +59,9 @@ error. See [F3_EVIDENCE.md](F3_EVIDENCE.md) for paths, fingerprints, independent
 review and the initial failed dependency-resolution attempt.
 
 Successful linkage is not native ABI, cancellation, hardware/model fit,
-filesystem recovery, R1 readiness, or F-integration qualification. R2 still needs
-coordinator-approved F2 integration. Re-run gates at the integration boundary;
+filesystem recovery, R1 readiness, or F-integration qualification. R2 is now
+safety-disabled and unmerged pending a reviewed published RootOnly dependency;
+its expansion prototype does not compile against this older stable pin. These
+historical F3 results are not a passing build claim for the current R2 worktree.
+Re-run gates at the integration boundary;
 the canonical plan has not been marked complete or transferred.

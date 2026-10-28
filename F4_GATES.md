@@ -2,7 +2,10 @@
 
 Owner/branch: `f4`; target: local `main` after independent Workmux review.
 Authority: F4 in canonical `virtual-vectorfs/docs/LOCAL_AGENT_PLAN.md` and F1
-policy; no plan transfer. F3 base: `9f80f78`. No R1/R2 implementation.
+policy; no plan transfer. Original F3 base: `9f80f78`. R2 retains a disabled,
+unmerged prototype and extends the shared formatting check. Final branch-only
+API compilation uses published vvfs 88108866, not native adoption. F4 criteria
+and assertions are retained, not rerun on R2 in final publication.
 
 ## CHECK / EXPECT
 
@@ -10,16 +13,15 @@ From this worktree, with installed native libraries and cached Go dependencies:
 
 ```sh
 umask 077
-export SCRATCH=$(mktemp -d /mnt/common/familiar-f4.XXXXXX)
-export SOURCE=/mnt/common/projects/go-pkgs/virtual-vectorfs
-export NATIVE="$SOURCE/build/native"
+export SCRATCH=$(mktemp -d "${SCRATCH_PARENT:?select private scratch parent}/familiar-f4.XXXXXX")
+: "${NATIVE:?set installed compatible native prefix}"
 timeout 300s bash scripts/check-f3.sh
 timeout 180s bash scripts/check-f4.sh
 ```
 
 F3 script consumes the initially empty scratch, exports only committed search
 `fe092dd03d398570b5d93cf0c030f573bc90257b` and supplies an offline temporary
-workspace override. F4 reuses that explicit export/environment, not dirty F2.
+version-specific workspace override. F4 reuses that clean committed export.
 No downloads, installation, native builds, models, endpoints or inference.
 
 1. Build and vet all Go packages with F3's vector/native/offline environment;
@@ -61,11 +63,12 @@ actually available capacity with 512 MiB system/VRAM headroom. Missing reliable
 memory measurement blocks qualification, not success. F1 context/call/task limits
 still apply. These are enablement ceilings, not claims that any model fits.
 Actual task success waits for R6; model/runtime/artifact qualification waits for
-separately authorized R1. R2 still requires approved F2 integration.
+separately authorized R1. R2 is safety-disabled and unmerged pending an approved
+published RootOnly dependency; current prototype compilation remains blocked.
 
 ## Results
 
-Passed locally on 2026-10-21 in `/mnt/common/familiar-f4.lJWdR6`: F3 build/vet/
+Passed locally on 2026-10-21 in retained private scratch: F3 build/vet/
 doctor/loader checks and both fresh F4 retrieval runs, all three loader rejection
 checks, and identical input manifests. Mean recall@5 was 1.0 in both runs;
 overall warm p95 0.819/1.072 ms; sampled peak RSS 38,296/37,916 KiB. See
