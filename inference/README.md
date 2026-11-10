@@ -1,7 +1,9 @@
 # Local generation API
 
-Package `familiar.local/familiar/inference` provides experimental Linux generation
-library code. It is **not wired into `familiar doctor` or any assistant command**.
+Package `familiar.local/familiar/inference` provides experimental local generation
+APIs. `Local` and `TaskRuntime` support the reactive task CLI. The older `Owned`
+generator is separate, is not used by that CLI, and still requires a separately
+provisioned containment launcher. None is used by `familiar doctor`.
 Runtime compatibility, model behavior, resource fit and containment are not
 established by the source alone. Do not treat it as a ready-to-use assistant or
 an included sandbox.
@@ -23,10 +25,56 @@ not evidence that an installed model works.
 | `EmbeddingFallbackCandidate()` | EmbeddingGemma2 Q8_0 | Metadata only; no automatic fallback. |
 
 [`Generator`, `Decider` and `Embedder`](ports.go) are separate interfaces. Only
-`Generator` has an implementation here. Profile presence does not enable a
-model, semantic index, decision router or tool execution.
+`Generator` has an implementation here; `Local` separately implements
+`Conversation`. Profile presence does not enable a model, semantic index or
+decision router. Tool dispatch belongs to the task caller, not inference.
 
-## Configure an owner
+## Structured task conversations
+
+`NewLocal(EndpointConfig)` selects an already running loopback HTTP endpoint with
+an explicit port, `/v1` base path and model ID. It accepts `127.0.0.1`, `localhost`
+(mapped to IPv4 loopback) or `[::1]`; not LAN/cloud URLs, credentials in URLs,
+proxies or redirects. It does not load models, discover servers, read API keys,
+retry generation or control the external server's lifecycle/egress. Generic
+OpenAI-compatible behavior is not a guarantee of tool-calling compatibility.
+
+`Local.Turn(ctx, messages, tools, emit)` returns a completed `Message` containing
+text, structured tool calls and optional reasoning. Stream deltas are provisional;
+completion requires a supported finish reason and `[DONE]`. The caller must
+validate tool names/arguments/authority before dispatch, retain call/result IDs
+and enforce task limits. `Close()` closes idle client connections; canceling an
+HTTP request is not proof that an external server stopped generation.
+
+Configuration requires `Thinking` (`runtime`, `on` or `off`), `OutputTokens`
+(1..4096) and `ContextBytes` (1024..131072). Thinking/cache overrides require
+`Llama: true`. Generic endpoints use only the encoded request byte ceiling, not a
+token estimate or guaranteed token window. For llama.cpp, preflight uses `/props`,
+`/apply-template` and `/tokenize` to check the reported single-slot context;
+optional `ContextTokens` can lower that ceiling. Output reserve plus one-token
+headroom is included. `ContextLimitError` occurs before generation; the task caller
+may remove whole historical tasks from its projection, but must not retry an
+ambiguously accepted generation. `Cache` requests prefix reuse, not a proven hit.
+
+`PrepareTaskRuntime(ctx, TaskRuntimeConfig)` hashes and holds explicitly selected
+trusted executable/weights descriptors without starting a process. `Start` starts
+one CPU-only llama.cpp child, verifies its accepted loopback sockets before HTTP,
+adds per-instance authentication, then returns a configured `Local`. It requires
+Linux `openat2`, `/proc`, nonsymlink artifact ancestry and nonempty regular files
+not writable by group/others; the executable must have an execute bit. The runtime
+gets a restricted environment and a library path limited to its executable's
+directory. File hashes do not verify transitive libraries, behavior or same-user
+interference.
+
+This runtime is single-use and resident for the whole CLI launch, including idle
+prompts. Defaults selected by the CLI are 16384 context tokens, two CPU threads
+and a two-minute startup timeout. Its available-memory check is only a snapshot;
+there is no supplied sandbox, external launcher, hard quota, daemon or idle
+eviction. `Close()` signals the direct child, escalates after two seconds and
+waits for reaping; it does not guarantee control of detached descendants. The
+process's offline flag is not enforced outbound-network isolation. See
+[task usage and privacy warnings](../README.md#run-an-experimental-task).
+
+## Legacy generator: configure an owner
 
 `NewOwned(LocalConfig)` validates configuration without accessing files, the
 network or processes. Supply:
@@ -76,7 +124,7 @@ or a LAN/external-server option. The runtime must support the fixed arguments an
 authenticated `/v1/models`, `/apply-template`, `/tokenize` and
 `/v1/chat/completions` contracts in the source; generic compatibility is insufficient.
 
-## Generate and consume events
+## Legacy generator: generate and consume events
 
 Call `Generate(ctx, GenerateRequest, Emit)` on the owner. Populate the embedded
 `Envelope` with `Version: 1`, nonempty task/request/attempt/policy references,
@@ -85,7 +133,8 @@ the generation profile fingerprint and a nonzero deadline. Set
 
 - Supply at most 32 UTF-8 text messages, with at most 32 KiB combined content.
   Roles are `user` and `assistant`, plus an optional first `system` message.
-  The last message must be `user`; tool-result conversations are not supported.
+  The last message must be `user`; structured tool calls/results and reasoning
+  fields are rejected here. Use `Conversation` for structured continuation.
 - Up to four unique named tools may be described. Each has a closed argument
   object with at most eight required string fields; nested/optional fields and
   arbitrary JSON Schema are not supported.
@@ -112,7 +161,7 @@ or incomplete streams, duplicate JSON keys, length stops and nonempty normalized
 `reasoning_content` are rejected. Raw generated text is not a reasoning detector
 or trusted evidence. Local artifact verification does not verify answer quality.
 
-## Residency and shutdown
+## Legacy generator: residency and shutdown
 
 `Acquire(ctx)` lazily loads and returns a residency-only lease. Loads coalesce;
 waiters cancel independently, and the last waiter can cancel an unfinished load.

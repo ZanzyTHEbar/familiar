@@ -49,6 +49,8 @@ Use only disposable synthetic inputs, **not a personal workspace**. The helper
 writes native indexes to scratch state. Explicit root/state arguments are not an
 OS sandbox or proof that native dependencies cannot read ambient Git/configuration
 outside the input tree. Do not rely on it for private-workspace confinement.
+This standalone helper does not use the task CLI or the scoped-evidence
+adapter; its native indexing behavior is separate from both.
 
 The loader checks that committed and copied inputs remain unchanged, requires
 all judged relevant files in the returned top five and no hits for absent-input

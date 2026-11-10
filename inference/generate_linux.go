@@ -150,6 +150,9 @@ func (o *Owned) generationBody(r GenerateRequest) (map[string]any, error) {
 	}
 	total := 0
 	for i, m := range r.Messages {
+		if len(m.ToolCalls) != 0 || m.ToolCallID != "" || m.ReasoningContent != "" {
+			return nil, ErrProtocol // structured conversations use Conversation, not this legacy port
+		}
 		if m.Role != "user" && m.Role != "assistant" && !(i == 0 && m.Role == "system") {
 			return nil, ErrProtocol
 		}
