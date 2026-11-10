@@ -1,48 +1,68 @@
-# Synthetic garden corpus v1
+# Synthetic retrieval fixtures
 
-`v1/manifest.json` is the versioned contract: 10 small invented UTF-8 text files,
-13 judged tasks (two per positive category, three negative controls), input byte
-lengths/SHA-256, and gold evidence. No extracted personal data or binary formats.
+This directory contains ten invented UTF-8 text files and thirteen judged tasks.
 Corpus text and manifest are dedicated to the public domain under
 [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+They contain no extracted personal data, models or runtime binaries.
 
-Gold references name files whose `gold` object specifies an exact UTF-8 half-open
-byte window `[start,end)` and verbatim quote; the file SHA-256 binds that window
-to its version. These are offline judgments, **not a production citation API**.
-Evidence windows include whole short paragraphs, including one non-ASCII name.
-The archived draft is deliberately obsolete; byte-identical receipts and a
-near-duplicate revision must not be conflated. Change corpus version and hashes
-when changing inputs/gold, rather than silently reusing a benchmark identity.
+[`v1/manifest.json`](v1/manifest.json) describes each input's path, byte size,
+SHA-256 and gold evidence. A gold range is an exact UTF-8 half-open byte window
+`[start,end)` whose bytes match its quote. Tasks include prompts, required answer
+criteria and fixed path/grep/keyword probes with relevant-file judgments. These
+are fixture data, not a production citation API or demonstrated assistant answers.
+The obsolete draft and identical/revised receipts are intentionally distinct.
 
-## Offline use
+## Verify without native dependencies
 
-Python 3.9+ (stdlib only), Linux `/proc`, installed native dependencies, and the
-same cached Go build setup as F3 are required. Run from the repository root:
+With **Python 3.9+**, run from the repository root:
 
-```sh
+```bash
 python3 scripts/fixture_baseline.py --corpus "$PWD/fixtures/v1" --verify-only
 ```
 
-The loader verifies the complete input inventory, hashes, evidence ranges and
-task references before materializing byte-identical files in an explicitly
-selected empty scratch directory. It never adopts a personal/workspace root.
-`cmd/familiar-baseline` is a measurement helper, intended only for those verified
-scratch copies. It requires explicit root and empty external state, indexes with
-the real pinned FFF/Bleve search engine, and returns schema-versioned raw samples.
-It is not a second agent interface and does not independently load/judge gold.
-Its required dimension of 1 is an unused index-schema placeholder, **not an
-embedding profile**; no vectors or semantic queries are supplied.
+This uses only the Python standard library. It validates input inventory, paths,
+UTF-8, byte sizes/hashes, evidence ranges/quotes and task references. It does not
+launch search, run a model or materialize a scratch corpus.
 
-Fixed retrieval probes are hand-authored baseline queries, not a claim that a
-router can derive them from the prompts. Lanes: fuzzy path lookup, plain literal
-grep (first five distinct files), and keyword top five. There is one unmeasured
-warmup per probe followed by 20 measured rounds, with no query rewriting or
-reranking. Relevant files are required, not an exhaustive ban on other hits;
-absent-input controls require zero hits. Per-probe and overall p95 use the
-nearest-rank statistic. Recall averages only nonempty relevance judgments;
-absent controls are reported separately. Index/open time and process wall time
-are separate from warm query latency. Two runs use fresh independent indexes.
-Raw samples, index evidence, provenance, before/after manifests and summary JSON
-stay outside the input tree. Sampling process-tree RSS is not an exact kernel
-peak or an enforced resource limit; Go's soft heap limit excludes native memory.
-VRAM is explicitly unmeasured; CPU-only retrieval cannot qualify model fit.
+## Measure native retrieval
+
+Full measurement additionally needs Linux `/proc`, the compatible native search
+dependencies and the [build environment](../README.md#build). In the same shell
+as that build, compile the helper:
+
+```bash
+go build -mod=readonly -p=1 -tags=vectors -o "$BUILD_DIR/familiar-baseline" ./cmd/familiar-baseline
+```
+
+Choose a new empty scratch directory outside the corpus; the loader creates two
+independent verified input copies and index/state directories there:
+
+```bash
+umask 077
+FIXTURE_RUN=$(mktemp -d "$BUILD_ROOT/familiar-fixtures.XXXXXX")
+export OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 RAYON_NUM_THREADS=2
+python3 scripts/fixture_baseline.py --corpus "$PWD/fixtures/v1" \
+  --binary "$BUILD_DIR/familiar-baseline" --scratch "$FIXTURE_RUN"
+```
+
+Use only disposable synthetic inputs, **not a personal workspace**. The helper
+writes native indexes to scratch state. Explicit root/state arguments are not an
+OS sandbox or proof that native dependencies cannot read ambient Git/configuration
+outside the input tree. Do not rely on it for private-workspace confinement.
+This standalone helper does not use the task CLI or the scoped-evidence
+adapter; its native indexing behavior is separate from both.
+
+The loader checks that committed and copied inputs remain unchanged, requires
+all judged relevant files in the returned top five and no hits for absent-input
+probes, and compares the two runs' judgments. Each probe has one unmeasured warmup
+and twenty measured rounds. It enforces p95 retrieval latency at most 500 ms,
+per-run wall time at most 30 seconds and observed memory at most 512 MiB.
+Reports and raw samples are written beneath the selected scratch directory.
+Failures exit nonzero; do not alter the judgments to fit results.
+
+Queries are fixed fixture probes, not model-generated search plans. The helper's
+vector dimension of 1 is an unused index-schema placeholder: it supplies no
+embeddings or semantic queries. RSS is sampled through `/proc`, not an exact
+kernel-enforced aggregate peak, and VRAM is unmeasured. Retrieval hits do not
+measure end-to-end task success, model fit, refusal behavior or safe file actions.
+No corpus prompt is executed as an instruction to move or delete files.

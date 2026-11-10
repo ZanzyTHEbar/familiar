@@ -1,4 +1,4 @@
-// Familiar's F3 CLI is a presentation layer over package doctor.
+// Familiar exposes offline readiness and an explicitly authorized local task CLI.
 package main
 
 import (
@@ -9,13 +9,17 @@ import (
 	"os"
 
 	"familiar.local/familiar/doctor"
+	"familiar.local/familiar/task"
 )
 
 func main() { os.Exit(run(os.Args[1:], os.Stdout, os.Stderr)) }
 
 func run(args []string, out, stderr io.Writer) int {
+	if len(args) > 0 && args[0] == "task" {
+		return task.Run(args[1:], os.Stdin, out, stderr)
+	}
 	if len(args) == 0 || args[0] != "doctor" {
-		fmt.Fprintln(stderr, "usage: familiar doctor [--json] [--offline]")
+		fmt.Fprintln(stderr, "usage: familiar doctor [--json] [--offline] | familiar task --help")
 		return 2
 	}
 	flags := flag.NewFlagSet("doctor", flag.ContinueOnError)

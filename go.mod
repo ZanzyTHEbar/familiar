@@ -2,7 +2,7 @@ module familiar.local/familiar
 
 go 1.25.0
 
-require github.com/ZanzyTHEbar/virtual-vectorfs v0.0.0-20261011132509-fe092dd03d39
+require github.com/ZanzyTHEbar/virtual-vectorfs v0.0.0-20261028155634-88108866c3ca
 
 require (
 	github.com/RoaringBitmap/roaring/v2 v2.14.5 // indirect
