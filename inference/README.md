@@ -1,130 +1,135 @@
 # Local generation API
 
-Experimental API; model and containment qualification are not established.
+Package `familiar.local/familiar/inference` provides experimental Linux generation
+library code. It is **not wired into `familiar doctor` or any assistant command**.
+Runtime compatibility, model behavior, resource fit and containment are not
+established by the source alone. Do not treat it as a ready-to-use assistant or
+an included sandbox.
 
-## API and ownership
+See [build requirements](../README.md#build) for the repository's native Go build.
+No model, runtime executable or containment launcher is included or fetched.
 
-- `GenerationCandidate()` and Liquid-first `EmbeddingCandidate()` return immutable
-  value profiles; `LateInteractionCandidate()` is conditional, and
-  `EmbeddingFallbackCandidate()` preserves Gemma only as fallback. These are
-  **published metadata**, not local verification or working embedding/ranking APIs.
-  LFM3+ is a reviewed preference; there are no moving releases or auto-updates.
-- `Generator`, `Decider` and `Embedder` are separate interfaces.
-  Only `Owned.Generate` is implemented; no model router is supplied.
-- `NewOwned(LocalConfig)` accepts only explicitly provisioned absolute paths,
-  expected local runtime/launcher hashes, an operator-chosen nonzero loopback
-  port, license approval and reviewed containment/fit evidence. There is one
-  logical CPU generation owner per Go process, no multi-model scheduler or
-  generic endpoint/configuration layer. Close it before constructing another.
-- `Acquire(ctx)` coalesces loads and returns a residency-only lease; it exposes
-  no endpoint, process or tool authority. Each waiter can cancel independently;
-  the last cancels loading. Always release leases. Generation admission permits
-  one active and four waiting requests; cancellation removes waiting calls.
-  Failed loads have a 30-second cooldown; a later explicit call may retry. There
-  is no automatic generation replay, including after ambiguous transport failure.
-- State is `cold/loading/ready/idle/unloading/failed` (then `closed` on shutdown).
-  Only the last lease starts the fixed five-minute idle TTL. `EvictIdle` permits
-  earlier pressure eviction without touching active work. Acquisition waits for
-  reaping during unload. `Close(ctx)` cancels calls/loads and waits for leases and
-  owned teardown; a timeout is not proof of stopped resources.
+## Profiles and implemented operations
 
-Every load checks `/proc/meminfo` for measured peak reservation plus 512 MiB
-headroom, then hashes only the configured model/runtime/launcher. Model size and
-SHA-256 must match the candidate. This is not a directory scan. Runtime hashes
-must be supplied from the operator's reviewed build record: the v0.8.0 source
-revision alone does not identify a binary or its dynamically loaded libraries.
-An available-memory snapshot is not an OS reservation; containment must reserve
-and cap the process tree before native loading. Missing telemetry blocks loading.
+[`Profile`](profile.go) exposes `Identity()` as a value copy and `Fingerprint()`
+as a SHA-256 of the encoded identity. Candidate hashes describe expected bytes,
+not evidence that an installed model works.
 
-The fixed runtime arguments disable GPU layers, KV/op offload, automatic fit,
-context shifting, UI, built-in agent/MCP proxy and prompt caches; set 8192 context,
-1024 output maximum, one native slot and two CPU threads; and enable the embedded
-Jinja template with thinking disabled. Per-instance API auth uses fresh random
-bytes, passed only in a sanitized child environment, not command-line arguments,
-URLs or logs. No inherited runtime flags, proxies, credentials or search paths.
-The HTTP client has no proxies/redirects/DNS or general destination support and
-dials only the configured numeric `127.0.0.1` address. Plain HTTP exists **only for
-this owned loopback process**. No LAN/external-server path or fallback exists.
+| Function | Candidate | Implementation |
+| --- | --- | --- |
+| `GenerationCandidate()` | LiquidAI LFM3-1.7B Q4_K_M | `Owned.Generate` uses this fixed profile. |
+| `EmbeddingCandidate()` | LiquidAI LFM2.5-Embedding-350M Q8_0 | Metadata only; no embedding adapter. |
+| `LateInteractionCandidate()` | LiquidAI LFM2.5-ColBERT-350M Q8_0 | Metadata only; no retrieval/reranking adapter. |
+| `EmbeddingFallbackCandidate()` | EmbeddingGemma2 Q8_0 | Metadata only; no automatic fallback. |
 
-### Explicit containment prerequisite, not a supplied sandbox
+[`Generator`, `Decider` and `Embedder`](ports.go) are separate interfaces. Only
+`Generator` has an implementation here. Profile presence does not enable a
+model, semantic index, decision router or tool execution.
 
-No containment launcher is provisioned by this change. To avoid treating
-`--offline` or the Go heap as a security/memory boundary, loading requires an
-explicitly pinned, preprovisioned launcher with this fixed argv protocol:
+## Configure an owner
+
+`NewOwned(LocalConfig)` validates configuration without accessing files, the
+network or processes. Supply:
+
+- `Runtime` and `Launcher`: `FilePin` values with explicit absolute paths and
+  lowercase SHA-256 hashes of the installed executables.
+- `ModelPath`: an absolute path matching the generation candidate's exact byte
+  size and SHA-256 in `GenerationCandidate().Identity()`.
+- `Port`: an explicitly selected nonzero loopback port.
+- `LicenseApproved`: confirmation that applicable artifact terms were accepted.
+- `Evidence`: a nonempty reference to deployment containment/resource review.
+- `PeakBytes`: a measured peak memory requirement, at least the model file size
+  and at most 8 GiB. File size alone is not a peak memory estimate.
+
+The configuration fields express caller assertions, not verified permission or
+proof of containment. Only one owner can exist per Go process; successfully close
+it before creating another. `Status()` is an in-memory state/reason snapshot.
+
+### Launcher requirements
+
+The separately supplied executable must accept this argument protocol:
 
 ```text
 launcher --memory-max-bytes <PeakBytes> --deny-outbound -- <runtime> <fixed-server-args...>
 ```
 
-The reviewed launcher must apply process-tree memory accounting/reservation and
-hard limits (including native allocations and no swap), deny all new outbound
-connections (including loopback), allow only replies on the owned loopback listener,
-drop any setup privilege, retain the supplied API key, and **exec** the runtime
-without detached children. It must keep the runtime reachable only on owned
-loopback. Evidence must establish actual RAM/VRAM headroom, local immutable
-artifact/build/native identities and CPU-only behavior. No implementation or
-capability is inferred from a filename or a nonempty evidence reference. These
-are operator-provisioned prerequisites and actual qualification gates; arbitrary
-`/bin/sh` wrappers or unreviewed scripts do not satisfy them. No privilege changes,
-namespace/firewall/cgroup setup or license acceptance are performed here.
+It must enforce process-tree memory accounting/reservation and a hard cap without
+swap, deny all new outbound connections including loopback, permit replies on the
+owned loopback listener, drop setup privileges, preserve the supplied API key,
+and `exec` the runtime without detached children. Familiar supplies no launcher
+implementation and does not configure namespaces, cgroups or firewalls. An
+executable name, flag or nonempty `Evidence` string cannot establish these controls.
 
-Artifact leaf symlinks, special files, group/other-writable files and executables
-larger than 512 MiB are refused. Hash verification precedes path-based execution/loading: deployment must keep
-these files and trusted path ancestry immutable between verification and use.
-This is not protection from a same-UID adversary replacing artifacts or inspecting
-the child environment. Linux parent-thread death signaling is defensive, not a
-qualified crash/descendant containment guarantee. Do not infer such guarantees
-from source alone. A separately provisioned, qualified containment launcher is required.
+Each load reads `/proc/meminfo` and requires `PeakBytes` plus 512 MiB available
+RAM, then hashes only the configured artifacts. This snapshot is not an OS memory
+reservation. Artifact leaf symlinks, nonregular files, group/other-writable files
+and runtime/launcher executables over 512 MiB are rejected. Keep the files and
+their path ancestry trusted and immutable between verification and use: execution
+is path-based, not immune to replacement races or same-UID interference.
 
-## HTTP and tool contract
+The runtime is launched with fixed CPU-only arguments, 8192-token context, at most
+1024 output tokens, one native slot and two CPU threads. Thinking, prompt caches,
+context shifting, UI and built-in agent/MCP features are disabled. The child gets
+a restricted environment with a fresh per-instance API key. Transport uses only
+its configured numeric `127.0.0.1` address, without environment proxies, redirects
+or a LAN/external-server option. The runtime must support the fixed arguments and
+authenticated `/v1/models`, `/apply-template`, `/tokenize` and
+`/v1/chat/completions` contracts in the source; generic compatibility is insufficient.
 
-Requests carry version 1, bounded task/request/attempt IDs, policy snapshot
-reference, exact candidate fingerprint and deadline. Events add the local
-fingerprint (configured runtime/launcher hashes, provisioning record, fixed options)
-and monotonic sequence. Verification is explicitly `configured-not-verified`
-until a lease is acquired, then `local-artifact-bytes-verified`; neither proves
-model behavior or build/native provenance. There is one attempted terminal event even on failure or
-cancellation. A sink that rejects delivery cannot be promised a delivered event;
-sinks must honor their context and return promptly. No unbounded event goroutines.
+## Generate and consume events
 
-Queue, load, template/token preflight and inference share a two-minute call
-deadline. After closing canceled/failed generation HTTP, the owner conservatively
-terminates that owned process rather than assume native cancellation succeeded;
-SIGTERM gets two seconds before SIGKILL. Reaping must finish before a new load;
-OS teardown may outlast the request deadline and is not claimed as model latency.
-No other actual HTTP user exists. Passive readiness leases do not authorize work.
+Call `Generate(ctx, GenerateRequest, Emit)` on the owner. Populate the embedded
+`Envelope` with `Version: 1`, nonempty task/request/attempt/policy references,
+the generation profile fingerprint and a nonzero deadline. Set
+`MaxOutputTokens` between 1 and 1024.
 
-Local readiness is load-triggered, authenticated `/v1/models` (4 KiB responses,
-one-second attempts at most four/second under the bounded load deadline), not
-default doctor probing, discovery or LAN capability checks. A port collision
-cannot cause adoption of an unauthenticated existing server. The selected model
-alias must match the profile. This does not prove backend/template compatibility.
+- Supply at most 32 UTF-8 text messages, with at most 32 KiB combined content.
+  Roles are `user` and `assistant`, plus an optional first `system` message.
+  The last message must be `user`; tool-result conversations are not supported.
+- Up to four unique named tools may be described. Each has a closed argument
+  object with at most eight required string fields; nested/optional fields and
+  arbitrary JSON Schema are not supported.
+- The encoded request is capped at 64 KiB. Template/token preflight rejects
+  input plus requested output plus one-token headroom exceeding 8192 tokens.
+  It does not silently truncate input.
 
-`/apply-template` receives the same messages/tools/template options as generation;
-`/tokenize` counts the rendered prompt with special tokens before sending chat
-completion. Reject input + requested output + one-token headroom above 8192.
-Qualification must confirm the template/tokenizer path matches actual prompt
-usage. No truncation, context shifting or assumed characters-per-token estimate.
-Only text system/user/assistant messages ending in a user message are accepted;
-tool-result conversations/agent iteration are deliberately deferred.
+Admission, load, preflight and generation share a two-minute call deadline,
+shortened by the caller's deadline. One request runs while up to four wait;
+additional requests return `ErrBusy`. Calls are not automatically replayed.
 
-Bounds: 32 messages, 32 KiB message content, 64 KiB encoded request, 48 KiB rendered
-prompt, 256 KiB JSON preflight response, 16 KiB response headers, 64 KiB SSE line,
-1 MiB aggregate stream, 4096 frames, JSON depth 16, 256 KiB text output, one tool
-call with 8 KiB arguments. JSON duplicate keys are refused. Completion requires
-matching response/model IDs, valid finish reason, bounded usage and `[DONE]`;
-short reads, length stops, malformed frames or nonempty normalized
-`reasoning_content` fields are failures; raw text is not a reasoning detector.
-Stream text/tool fragments are untrusted partial observations, not final answers.
+`Emit` is synchronous: honor its context and return promptly. Events have ordered
+sequence numbers and request/profile references. Kinds are `started`,
+`text_delta`, `tool_call_delta`, `usage`, and terminal `completed`, `failed` or
+`canceled`. The API attempts one terminal event, but cannot guarantee delivery if
+the sink fails or blocks. Text and tool fragments are provisional, untrusted data.
+Only a successful completed event may carry an assembled, schema-checked tool
+proposal. **Nothing dispatches that proposal here.** The caller must enforce real
+grants, source validity, task-wide budgets and call-ID deduplication. A policy
+reference in a request does not enforce a policy.
 
-Allowed tool schemas are deliberately limited to at most four named read-only
-tools, each a closed object with at most eight required string fields. No generic
-JSON Schema engine or dependency. The assembled single normalized call must have
-a bounded identifier, an allowed name, exact required keys and string values;
-null/extra/duplicate/nested arguments fail. Raw LFM XML-like text is never parsed
-as a tool call. Only a completed event can carry the validated proposal; it still
-needs source-handle/grant/budget validation and call-ID deduplication by the
-caller. No arbitrary generated text, schema or tool can execute an effect here.
+Responses have bounded headers, JSON depth, stream size and frame count. Malformed
+or incomplete streams, duplicate JSON keys, length stops and nonempty normalized
+`reasoning_content` are rejected. Raw generated text is not a reasoning detector
+or trusted evidence. Local artifact verification does not verify answer quality.
+
+## Residency and shutdown
+
+`Acquire(ctx)` lazily loads and returns a residency-only lease. Loads coalesce;
+waiters cancel independently, and the last waiter can cancel an unfinished load.
+Always call `Lease.Release()`; release is idempotent and grants no tool authority.
+Generation acquires and releases its own lease.
+
+The last release starts a five-minute idle timeout. `EvictIdle()` may evict sooner
+but not while leases are active. Failed loads have a 30-second retry cooldown;
+there is no automatic retry within a call. Canceled or incomplete accepted
+generation requests trigger owned-process teardown rather than assuming native
+work stopped. Teardown sends SIGTERM, then SIGKILL after two seconds if needed,
+and waits for reaping; it may outlast the request deadline.
+
+Use `Close(ctx)` to cancel loading/calls and wait for leases and teardown. A close
+timeout is **not proof that resources stopped**: release outstanding leases and
+call it again to finish shutdown. Parent-death signaling is defensive, not a
+guarantee about detached descendants or crash containment.
 
 ## Artifact licenses
 
