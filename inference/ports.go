@@ -24,8 +24,30 @@ type Envelope struct {
 }
 
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role             string             `json:"role"`
+	Content          string             `json:"content"`
+	ToolCalls        []ConversationCall `json:"tool_calls,omitempty"`
+	ToolCallID       string             `json:"tool_call_id,omitempty"`
+	ReasoningContent string             `json:"reasoning_content,omitempty"`
+}
+
+// ConversationCall retains the provider's call identity and exact argument JSON.
+// It is an untrusted proposal, never an execution grant.
+type ConversationCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"`
+	Function FunctionCall `json:"function"`
+}
+
+type FunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+}
+
+// Conversation is the structured continuation seam. Owned's older text-only
+// Generator contract remains separate; it does not implement this interface.
+type Conversation interface {
+	Turn(context.Context, []Message, []Tool, func(kind, delta string) error) (Message, error)
 }
 
 // Tool is a deliberately small schema: a closed object of required strings.

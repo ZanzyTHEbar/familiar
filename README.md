@@ -27,8 +27,9 @@ Doctor does not inspect its working directory, HOME, environment configuration,
 or workspace/state roots and has no root flags or defaults. It creates no
 directories, state, indexes, or watchers. Empty scratch roots are acceptance
 fixtures, not adopted workspace identities or approved read/write grants.
-There is no agent loop, embedding ingestion, SQLite/replay, Goja, broker, or
-mutation capability.
+Those guarantees describe **doctor**, not `task`. The task CLI has a separate
+read-only agent loop and JSONL journal/replay; it has no embedding ingestion,
+SQLite, Goja, arbitrary shell or workspace mutation capability.
 
 ## License
 
